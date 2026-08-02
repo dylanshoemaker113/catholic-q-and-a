@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Editor — Quaestiones</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;1,500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+  <div class="shell">
+    <header class="site-head">
+      <div class="brand">
+        <h1><a href="index.html">Quaestiones</a></h1>
+        <nav><a href="index.html">&larr; Back to library</a></nav>
+      </div>
+      <div class="tagline">Editor — this page is not linked from the public site</div>
+    </header>
+
+    <main>
+      <details class="panel">
+        <summary style="cursor:pointer; font-family: var(--sans); font-size:13px; color: var(--ink-soft);">
+          Connection settings (stored only in this browser)
+        </summary>
+        <div style="margin-top:14px;">
+          <div class="field">
+            <label>GitHub username / org</label>
+            <input type="text" id="s-owner" placeholder="e.g. jsmith" />
+          </div>
+          <div class="field">
+            <label>Repository name</label>
+            <input type="text" id="s-repo" placeholder="e.g. quaestiones" />
+          </div>
+          <div class="field">
+            <label>Branch</label>
+            <input type="text" id="s-branch" placeholder="main" />
+          </div>
+          <div class="field">
+            <label>GitHub personal access token</label>
+            <input type="password" id="s-token" placeholder="fine-grained token, Contents: read & write, this repo only" />
+            <div class="hint">Create at github.com &rarr; Settings &rarr; Developer settings &rarr; Fine-grained tokens. Scope it to this one repo only.</div>
+          </div>
+          <div class="field">
+            <label>Cloudflare Worker URL (for AI compile)</label>
+            <input type="url" id="s-worker" placeholder="https://your-worker.your-name.workers.dev" />
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="save-settings">Save settings</button>
+          </div>
+          <div class="status-line" id="settings-status" style="display:none;"></div>
+        </div>
+      </details>
+
+      <div class="panel">
+        <h3><span class="step">Load</span>Open an existing teaching</h3>
+        <div class="field">
+          <label>Slug</label>
+          <input type="text" id="load-slug" placeholder="e.g. purgatory" />
+        </div>
+        <div class="btn-row">
+          <button class="btn secondary" id="load-teaching">Load from GitHub</button>
+          <button class="btn secondary" id="new-teaching">Start new teaching</button>
+        </div>
+      </div>
+
+      <div class="editor-grid">
+        <div>
+          <div class="panel">
+            <h3><span class="step">1</span>Teaching</h3>
+            <div class="field">
+              <label>Title</label>
+              <input type="text" id="f-title" placeholder="e.g. Purgatory" />
+            </div>
+            <div class="field">
+              <label>Slug (used in the URL)</label>
+              <input type="text" id="f-slug" placeholder="auto-generated from title" />
+            </div>
+            <div class="field">
+              <label>Category</label>
+              <input type="text" id="f-category" placeholder="e.g. Eschatology, Mariology, Christology" />
+            </div>
+            <div class="field">
+              <label>Question (scholastic phrasing, optional)</label>
+              <input type="text" id="f-question" placeholder="e.g. Whether there is a Purgatory" />
+            </div>
+            <div class="field">
+              <label>Teaching explanation</label>
+              <textarea id="f-teaching" style="min-height:120px;"></textarea>
+            </div>
+            <div class="field">
+              <label>Why the Church teaches this</label>
+              <textarea id="f-why" style="min-height:100px;"></textarea>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3><span class="step">2</span>Objections &amp; replies</h3>
+            <div id="objections-wrap"></div>
+            <button class="btn secondary small" id="add-objection">+ Add objection</button>
+          </div>
+
+          <div class="panel">
+            <h3><span class="step">3</span>Further reading</h3>
+            <div class="field">
+              <label>Sources (one per line)</label>
+              <textarea id="f-further" placeholder="CCC 1030-1032&#10;Council of Trent, Session 25"></textarea>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="btn-row">
+              <button class="btn" id="save-github">Save to GitHub</button>
+              <button class="btn secondary" id="copy-json">Copy JSON</button>
+            </div>
+            <div class="status-line" id="form-status" style="display:none;"></div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <h3><span class="step">AI</span>Compile from a source</h3>
+            <p class="hint" style="margin-bottom:14px;">Find the source yourself (Catholic Answers, the Catechism, a Church Father, etc.), then let this draft a passage you edit and place by hand. Nothing is saved until you click "Save to GitHub."</p>
+
+            <div class="field">
+              <label>Source URL (optional)</label>
+              <input type="url" id="source-url" placeholder="https://www.catholic.com/..." />
+            </div>
+            <div class="btn-row">
+              <button class="btn secondary small" id="fetch-url">Fetch page text</button>
+            </div>
+
+            <div class="field" style="margin-top:14px;">
+              <label>Source text (fetched, or paste your own)</label>
+              <textarea id="source-text" style="min-height:140px;"></textarea>
+            </div>
+
+            <div class="field">
+              <label>Instruction</label>
+              <select id="ai-instruction">
+                <option value="Read this source and draft a single, specific objection a thoughtful critic would raise against the Catholic teaching under discussion. Write only the objection itself, in plain prose, under 120 words, no preamble.">Draft an objection from this</option>
+                <option value="Read this source and draft a Catholic reply to the objection it addresses. Write only the reply itself, in plain prose, under 180 words, no preamble, and stay accurate to what the source actually argues.">Draft a reply from this</option>
+                <option value="Summarize this source into a neutral 2-4 sentence explanation of the Church teaching it describes, suitable as a factual overview. No preamble.">Summarize as teaching explanation</option>
+                <option value="Summarize in 2-3 sentences why the Church holds this teaching, based on this source. No preamble.">Summarize as "why taught"</option>
+              </select>
+            </div>
+            <div class="btn-row">
+              <button class="btn" id="compile-btn">Compile with AI</button>
+            </div>
+            <div class="status-line" id="ai-status" style="display:none;"></div>
+
+            <hr class="divider" />
+
+            <label style="font-family: var(--sans); font-size:12px; color: var(--ink-soft); display:block; margin-bottom:6px;">Draft output</label>
+            <div class="ai-output" id="ai-output"></div>
+            <div class="field">
+              <label>Insert into</label>
+              <select id="insert-target"></select>
+            </div>
+            <div class="btn-row">
+              <button class="btn secondary small" id="insert-btn">Insert draft</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script src="assets/editor.js"></script>
+</body>
+</html>
